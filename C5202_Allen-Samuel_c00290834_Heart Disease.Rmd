@@ -1,0 +1,454 @@
+---
+title: "Heart Disease"
+author: "Allen Samuel Christopher C00290834"
+date: "05/1/2022"
+always_allow_html: true
+output: 
+  html_document:
+    code_folding: show
+    highlight: tango
+    number_sections: yes
+    toc: yes
+    toc_depth: 4
+  pdf_document:
+    toc: yes
+    toc_depth: '4'
+  word_document:
+    toc: yes
+    toc_depth: '4'
+---
+# Introduction
+This dataset contains information about contains diagnoses of heart disease patients. Every day, the average human heart beats around 100,000 times, pumping 2,000 gallons of blood through the body. Inside your body there are 60,000 miles of blood vessels.
+
+The signs of a woman having a heart attack are much less noticeable than the signs of a male. In women, heart attacks may feel uncomfortable squeezing, pressure, fullness, or pain in the center of the chest. It may also cause pain in one or both arms, the back, neck, jaw or stomach, shortness of breath, nausea and other symptoms. Men experience typical symptoms of heart attack, such as chest pain , discomfort, and stress. They may also experience pain in other areas, such as arms, neck , back, and jaw, and shortness of breath, sweating, and discomfort that mimics heartburn.
+
+It’s a lot of work for an organ which is just like a large fist and weighs between 8 and 12 ounces.
+
+# Research Question:  
+* How is the heart impacted cholesterol, Resting Blood pressure, maximum heart rate, Depression Rate,etc ?.
+
+
+
+```{r message = FALSE, warning = FALSE, include=FALSE}
+#install.packages('corrplot')
+#install.packages("ggcorrplot")
+```
+
+
+```{r message = FALSE, warning = FALSE, include=FALSE}
+library(tidyverse)
+library(corrplot)
+library(ggcorrplot)
+```
+
+```{r message = FALSE, warning = FALSE, include=FALSE}
+data <- read.csv("heart.csv")
+```
+
+# Data Description
+
+[Dataset source](https://archive.ics.uci.edu/ml/datasets/Heart+Disease)
+
+\
+The dataset was created by: -
+\
+\
+1. Hungarian Institute of Cardiology. Budapest: Andras Janosi, M.D.
+\
+\
+2. University Hospital, Zurich, Switzerland: William Steinbrunn, M.D.
+\
+\
+3. University Hospital, Basel, Switzerland: Matthias Pfisterer, M.D.
+\
+\
+4. V.A. Medical Center, Long Beach and Cleveland Clinic Foundation: Robert Detrano, M.D., Ph.D.
+
+\Dataset columns:
+
+\
+age: The person’s age in years
+\
+\
+sex: The person’s sex (1 = male, 0 = female)
+\
+\
+cp: chest pain type
+\
+\
+— Value 0: asymptomatic
+— Value 1: atypical angina
+— Value 2: non-anginal pain
+— Value 3: typical angina
+\
+\
+trestbps: The person’s resting blood pressure (mm Hg on admission to the hospital)
+\
+\
+chol: The person’s cholesterol measurement in mg/dl
+\
+\
+fbs: The person’s fasting blood sugar (> 120 mg/dl, 1 = true; 0 = false)
+\
+\
+restecg: resting electrocardiographic results
+\
+— Value 0: showing probable or definite left ventricular hypertrophy by Estes’ criteria
+— Value 1: normal
+- Value 2: having ST-T wave abnormality (T wave inversions and/or ST elevation or depression of > 0.05 mV)
+\
+\
+thalach: The person’s maximum heart rate achieved
+\
+\
+exang: Exercise induced angina (1 = yes; 0 = no)
+\
+\
+oldpeak: ST depression induced by exercise relative to rest (‘ST’ relates to positions on the ECG plot. See more here)
+\
+\
+slope: the slope of the peak exercise ST segment — 0: downsloping; 1: flat; 2: upsloping
+\
+\
+0: downsloping; 1: flat; 2: upsloping
+\
+\
+ca: The number of major vessels (0–3)
+\
+\
+thal: A blood disorder called thalassemia Value 0: NULL (dropped from the dataset previously
+\
+\
+Value 1: fixed defect (no blood flow in some part of the heart)
+Value 2: normal blood flow
+Value 3: reversible defect (a blood flow is observed but it is not normal)
+\
+\
+target: Heart disease (1 = no, 0= yes)
+\
+
+
+```{r}
+glimpse(data)
+```
+
+
+Cleaning the unwanted DATA.
+```{r message = FALSE, warning = FALSE, include=FALSE}
+data$S.NO  <- NULL
+```
+
+
+```{r message = FALSE, warning = FALSE, include=FALSE}
+data2 <- data %>% 
+  mutate(sex = if_else(sex == 1, "MALE", "FEMALE"),
+         fbs = if_else(fbs == 1, ">120", "<=120"),
+         exang = if_else(exang == 1, "YES" ,"NO"),
+         cp = if_else(cp == 1, "ATYPICAL ANGINA",
+                      if_else(cp == 2, "NON-ANGINAL PAIN", "ASYMPTOMATIC")),
+         restecg = if_else(restecg == 0, "NORMAL",
+                           if_else(restecg == 1, "ABNORMALITY", "PROBABLE OR DEFINITE")),
+         slope = as.factor(slope),
+         ca = as.factor(ca),
+         thal = as.factor(thal),
+         target = if_else(target == 1, "YES", "NO")
+         ) %>% 
+  mutate_if(is.character, as.factor) %>% 
+  dplyr::select(target, sex, fbs, exang, cp, restecg, slope, ca, thal, everything())
+```
+
+Installing naniar Package. if there is any missing values it will automatically plot and shows the missing values. For instance : In this data set there is no missing values so its showing as 0 %
+```{r message = FALSE, warning = FALSE}
+#install.packages("naniar")
+library(naniar)
+
+vis_miss(data2)
+```
+
+
+```{r message = FALSE, warning = FALSE}
+
+boxplot(data[,10:14])
+```
+
+## Analysis of presence and Absence of Heart Disease.
+```{r message = FALSE, warning = FALSE}
+graph1 <- ggplot(data2, aes(x=data2$target, fill=data2$target)) + 
+  geom_bar() +
+  xlab("Heart Disease") +
+  ylab("Count") +
+  ggtitle("Analysis of Presence and Absence of Heart Disease") +
+  scale_fill_discrete(name = "Heart Disease", labels = c("Absence", "Presence"))
+
+graph1
+
+
+```
+\
+The above graph represents the analysis of Presence and absence of Heart Disease. Target which shows the person who are all having heart disease, In this data 
+\
+We have 0 and 1 , 0 = person having heart disease , 1 = Not having heart disease.
+\
+The graph clearly indicates nearly more than 150 person having heart Disease.
+
+
+
+## Analysis of Chest Pain Experienced.
+```{r message = FALSE, warning = FALSE}
+
+graph2 <- ggplot(data2, aes(cp, fill = target))+
+  geom_bar(position = "fill")+
+  ggtitle("cp")
+graph2
+```
+\
+The above plot shows whether and what type of chest pain did target(patient) had.
+\
+Insights
+\
+Atypical and Non Anginal chest pain can be seen in more than two-thirds of targets
+
+## Age variable Analysis
+```{r message = FALSE, warning = FALSE}
+#Distribution of Male and Female population across Age parameter
+data2 %>%
+  ggplot(aes(x=age,fill=sex))+
+  geom_histogram()+
+  xlab("Age") + 
+  ylab("Number")+
+  guides(fill = guide_legend(title = "Gender"))
+```
+\
+From the above graph Male are more prone to Heart Disease. Disease is very common in the seniors which is composed of age group 60 and above and common among adults which belong to the age group of 41 to 60. But it’s rare among the age group of 19 to 40 and very rare among the age group of 0 to 18.
+\
+
+```{r message = FALSE, warning = FALSE}
+# Group the different ages in three groups (young, middle, old)
+young <- data[which((data$age<45)), ]
+middle <- data[which((data$age>=45)&(data$age<55)), ]
+elderly <- data[which(data$age>55), ]
+groups <- data.frame(age_group = c("young","middle","elderly"), group_count = c(NROW(young$age), NROW(middle$age), NROW(elderly$age)))
+
+#ploting different age groups
+ggplot(groups, aes(x=groups$age_group, y=groups$group_count, fill=groups$age_group)) + 
+  ggtitle("Age Analysis") +
+  xlab("Age Group")  +
+  ylab("group Count") +
+  geom_bar(stat="identity") +
+  scale_fill_discrete(name = "Age Group", labels = c("Elderly", "Middle", "Young"))
+```
+
+## Representation of Cholestoral level 
+```{r message = FALSE, warning = FALSE}
+# Representation of Cholestoral level 
+
+data2 %>%
+  ggplot(aes(x=age,y=chol,color=sex, size=chol))+
+  geom_point(alpha=0.7)+xlab("Age") +
+  ylab("Cholestoral")+
+  guides(fill = guide_legend(title = "Gender"))
+```
+\
+The above plot shows correlation between age and Cholestoral in heart disease patients
+\
+\
+Insights
+\
+From the above plot it can be interpreted, That as the age increase Cholestoral increases and its more dominated in males.
+
+## Analysis of maximum heart rate achieved
+```{r message = FALSE, warning = FALSE}
+# Histogram for thalach (maximum heart rate achieved)
+ggplot(data, aes(x=thalach)) + 
+geom_histogram() +
+  xlab("Maximum heart rate achieved") +
+  ylab("Count") +
+  ggtitle("Analysis of maximum heart rate achieved")
+```
+\
+From the above histogram, we can analyse that the data is now normally distributed but we can also observe that outliers are present in the data. So, we remove the outliers from the data.
+\
+
+```{r message = FALSE, warning = FALSE}
+# Replacing the outlier value with median value of thalach
+data$thalach = ifelse(data$thalach < 75, NA, data$thalach)
+data$thalach = ifelse(is.na(data$thalach), median(data$thalach[which(!is.na(data$thalach))]), data$thalach)
+
+ggplot(data, aes(x=thalach)) + 
+  geom_histogram() +
+  xlab("Maximum heart rate achieved") +
+  ylab("Count") +
+  ggtitle("Analysis of maximum heart rate achieved")
+
+```
+\
+After the outlier replacement we can analyse that the data is now normally distributed. 
+\
+
+
+## Finding Age of the Gender
+```{r message = FALSE, warning = FALSE}
+plot1 <- data2 %>% 
+  
+  ggplot(aes(age,sex))+ geom_line(colour = "green", size = 0.7)+
+  geom_smooth(method = 'loess',colour = "Red", se = FALSE, size = 0.1)+
+  theme_bw()+
+  theme(
+      axis.text.x = element_text(angle = 45,hjust = 1,vjust = 1),
+      legend.position = "top",
+      plot.title = element_text(face = "bold", colour = "#AE4371")
+  )+
+  labs(
+    title = "Finding Age of the Gender",
+    subtitle = "Age vs Gender",
+    x = "Age",
+    y = "Sex",
+  )
+
+plot1 
+
+
+```
+
+\
+Insights
+\
+
+1. Males are prone to heart disease at early age i.e(Before 30)
+2. Heart Disease related problems arises in women at mid 30s
+
+## Comparing Age with other factors.
+```{r message = FALSE, warning = FALSE}
+
+#install.packages("ggpubr")
+library(ggpubr)
+plot1 <- ggplot(data2, aes(x = age, y = trestbps, color = target, shape = target))+
+  geom_point()+
+  geom_smooth(se = FALSE)+ labs(
+    title = "Comparing Age with trestbps",
+    subtitle = "Age vs trestbps",
+    x = "age",
+    y = "trestbps")
+
+plot2 <- ggplot(data2, aes(x = age, y = chol, color = target, shape = target))+
+  geom_point()+
+  geom_smooth(se = FALSE)+ labs(
+    title = "Comparing Age with chol",
+    subtitle = "Age vs chol",
+    x = "age",
+    y = "chol")
+
+plot3 <- ggplot(data2, aes(x = age, y = thalach, color = target, shape = target))+
+  geom_point()+
+  geom_smooth(se = FALSE)+ labs(
+    title = "Comparing Age with thalach",
+    subtitle = "Age vs thalach",
+    x = "age",
+    y = "thalach")
+
+plot4 <- ggplot(data2, aes(x = age, y = oldpeak, color = target, shape = target))+
+  geom_point()+
+  geom_smooth(se = FALSE) + labs(
+    title = "Comparing Age with oldpeak",
+    subtitle = "Age vs oldpeak",
+    x = "age",
+    y = "oldpeak")
+
+ggarrange(plot1, plot2, plot3, plot4 ,ncol =2, nrow = 2, align = 'h')
+```
+
+trestbps = The person’s resting blood pressure (mm Hg on admission to the hospital)
+\
+\
+Comparing Age with trestbps
+\
+\
+From the above graph we can interpret the person who is having resting blood pressure level above 120 and people who are aged from 50 to 70 are mostly not having heart disease. The people who are aged from 30 to 40 are mostly impacted by heart disease. 
+\
+\
+Chol = The person’s cholesterol measurement in mg/d
+\
+\
+Comparing Age with Chol
+\
+\
+From the above graph we can interpret the person who is having cholesterol level from 200 to 350 and  people who are aged from 60 to 70 are mostly not impacted with heart disease. he people who are aged from 28 to 50 are mostly prone to heart disease.
+\
+\
+oldpeak = ST depression induced by exercise relative to rest
+\
+\
+Comparing Age with oldpeak
+The person who has ST depression level from 0.6 to 6 are likely not been affected from heart Disease.
+\
+\
+thalach: The person’s maximum heart rate achieved
+\
+\
+The people who are aged between 30 to 55 and whose heart rate levels above 150 are more prone to heart Disease.
+
+
+
+
+## Pain analysis Using Box plot and categorized with Gender
+```{r message = FALSE, warning = FALSE}
+plot1 <- data2 %>%
+  ggplot(aes(x=sex,y=trestbps))+
+  geom_boxplot(fill="red")+
+  xlab("Sex")+
+  ylab("BP")+
+  facet_grid(~cp)
+plot1 
+
+plot2 <- data2 %>%
+  ggplot(aes(x=sex,y=chol))+
+  geom_boxplot(fill="#D55E00")+
+  xlab("Sex")+
+  ylab("Chol")+
+  facet_grid(~cp)
+
+plot2
+```
+
+\
+The above Box plot shows whether and what type of chest pain did target(patient) had based on their Gender. Three types of pain namely Asymptomatic, Atypical Angina, Non- Anginal Pain
+\
+Insights
+\
+Atypical and Non Anginal chest pain can be seen in more than two-thirds of targets 
+
+## Ploting Confusion matrix showing Correlation between Various Factors.
+```{r message = FALSE, warning = FALSE}
+cor_heart <- cor(data2[,10:14])
+cor_heart
+
+corrplot(cor_heart, method = "ellipse", type="upper",)
+```
+\
+After observing above matrix we observe the our dependent varible is not/least related with fbs, chol, trestbps, restecg as they lies between [0.2, -0.2]. So, we can remove those varible from the dataset in our next data wrangling step
+\
+
+\
+
+# Conclusion
+From all the Visualization it indicates that the targets are more vulnerable to heart disease as patients gets old and is diagonsed with other risk factors like Resting blood pressure and cholesterol
+\
+
+# References
+\
+[UCL] (https://archive.ics.uci.edu/ml/datasets/Heart+Disease)
+\
+\
+[Kaggle](https://www.kaggle.com/datasets/redwankarimsony/heart-disease-data/code)
+\
+
+
+```{r}
+
+
+```
+
+
+```{r}
+```
+
